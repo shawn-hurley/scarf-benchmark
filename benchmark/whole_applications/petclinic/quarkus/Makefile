@@ -1,4 +1,5 @@
 DOCKER ?= docker
+PETCLINIC_TARGET := quarkus
 CONTAINER_KEY := $(shell printf '%s' '$(CURDIR)' | cksum | cut -d' ' -f1)
 IMAGE_ID_FILE := /tmp/scarfbench-petclinic-$(CONTAINER_KEY).image-id
 CONTAINER_NAME ?= scarfbench-petclinic-$(CONTAINER_KEY)
@@ -20,6 +21,6 @@ down:
 
 test: up
 	@status=1; trap '$(MAKE) down DOCKER=$(DOCKER) >/dev/null 2>&1' EXIT; \
-	if $(DOCKER) exec $(CONTAINER_NAME) bash /app/test.sh; then \
+	if $(DOCKER) exec -e PETCLINIC_TARGET=$(PETCLINIC_TARGET) $(CONTAINER_NAME) bash /app/test.sh; then \
 	  echo '===== 1 passed ====='; status=0; \
 	fi; exit $$status

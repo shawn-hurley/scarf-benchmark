@@ -3,7 +3,7 @@ set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:8080}"
 export BASE_URL
-export PETCLINIC_TARGET="quarkus"
+export PETCLINIC_TARGET="${PETCLINIC_TARGET:-quarkus}"
 
 python3 - <<'SCARFBENCH_PETCLINIC_BEHAVIOR'
 """PetClinic's shared veterinarian and owner/pet behavior contract."""

@@ -4,4 +4,4 @@
 
 The test checks that veterinarian records and their specialties are returned from the database, then checks owner lookup and the associated pets. It uses the existing Jakarta REST routes and the Spring/Quarkus routes explicitly; an unexpected route change fails verification. Jakarta has a different set of seeded owners and a JSF interface, so its owner assertion uses its REST detail endpoint. The Spring owner assertion exercises surname search; the Quarkus assertion uses owner detail.
 
-Run `make test` from a target directory, or `make test DOCKER=podman`. Set `BASE_URL` only when running `test.sh` directly against a different host or port.
+Run `make test` from a target directory, or `make test DOCKER=podman`. The Makefile sets `PETCLINIC_TARGET` explicitly, so native validation still selects the target contract if a generated conversion retains the source `test.sh`. Set `BASE_URL` only when running `test.sh` directly against a different host or port.

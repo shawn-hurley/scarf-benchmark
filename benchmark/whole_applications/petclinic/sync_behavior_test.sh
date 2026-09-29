@@ -11,7 +11,7 @@ set -euo pipefail
 
 BASE_URL="\${BASE_URL:-http://localhost:8080}"
 export BASE_URL
-export PETCLINIC_TARGET="$target"
+export PETCLINIC_TARGET="\${PETCLINIC_TARGET:-$target}"
 
 python3 - <<'SCARFBENCH_PETCLINIC_BEHAVIOR'
 SHELL_HEADER
