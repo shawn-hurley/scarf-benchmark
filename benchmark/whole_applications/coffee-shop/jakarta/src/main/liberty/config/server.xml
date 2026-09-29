@@ -39,7 +39,7 @@
       user="${env.DB_USER}"
       password="${env.DB_PASSWORD}"
       serverName="${env.DB_HOST}"
-      portNumber="${env.DB_PORT:5432}"/>
+      portNumber="5432"/>
   </dataSource>
 
   <webApplication id="coffeeshop"

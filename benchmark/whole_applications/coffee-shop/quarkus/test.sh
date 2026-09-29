@@ -1,15 +1,107 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE_URL="${BASE_URL:-http://localhost:8080}"
+# This template generates each target's test.sh. ACB copies only test.sh, so
+# the Python test lives inside that generated script.
+python3 - <<'PY'
+import json
+import os
+import sys
+import time
+import urllib.error
+import urllib.request
+import uuid
+from datetime import datetime, timezone
 
-echo "Health check: ${BASE_URL}/"
-HTTP_STATUS=$(curl -sL -o /dev/null -w "%{http_code}" "${BASE_URL}/")
 
-if [ "$HTTP_STATUS" -eq 200 ]; then
-  echo "PASS - got HTTP ${HTTP_STATUS}"
-  exit 0
-else
-  echo "FAIL - got HTTP ${HTTP_STATUS}"
-  exit 1
-fi
+def request(base, path, data=None):
+    body = None if data is None else json.dumps(data).encode()
+    req = urllib.request.Request(
+        base + path, data=body,
+        headers={"Content-Type": "application/json"} if body else {},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as response:
+            return response.status, response.read().decode()
+    except urllib.error.HTTPError as error:
+        return error.code, error.read().decode()
+
+
+def parsed(body):
+    try:
+        return json.loads(body)
+    except json.JSONDecodeError as error:
+        raise AssertionError(f"expected JSON response, got {body[:300]!r}") from error
+
+
+def check(condition, message):
+    if not condition:
+        raise AssertionError(message)
+
+
+profile = os.environ.get("COFFEE_SHOP_TARGET", "quarkus")
+check(profile in {"jakarta", "quarkus", "spring"}, f"unknown Coffee Shop target: {profile}")
+base = os.environ.get("BASE_URL", "http://localhost:9080" if profile == "jakarta" else "http://localhost:8080").rstrip("/")
+readiness = {"jakarta": "/api/barista/status", "spring": "/api/health", "quarkus": "/"}[profile]
+deadline = time.monotonic() + int(os.environ.get("STARTUP_TIMEOUT", "240"))
+while True:
+    try:
+        status, _ = request(base, readiness)
+        if status == 200:
+            break
+    except (OSError, TimeoutError):
+        pass
+    if time.monotonic() >= deadline:
+        raise AssertionError(f"{profile} did not serve expected route {readiness}")
+    time.sleep(2)
+
+print(f"Testing {profile} order behavior at {base}")
+for item, route in (("LATTE", "barista"), ("CROISSANT", "kitchen")):
+    token = uuid.uuid4().hex
+    if profile == "jakarta":
+        payload = {"customer": token, "item": item.lower(), "quantity": 2}
+        status, body = request(base, "/api/orders", payload)
+        check(status == 202, f"POST /api/orders: expected 202, got {status}: {body[:300]}")
+        order_id = parsed(body).get("id")
+        check(str(order_id).isdigit(), f"missing numeric order ID: {body[:300]}")
+        status, body = request(base, f"/api/orders/{order_id}")
+        check(status == 200, f"GET /api/orders/{order_id}: {status}: {body[:300]}")
+        order = parsed(body)
+        check(str(order.get("id")) == str(order_id), f"wrong order ID: {order}")
+        check(order.get("customer") == token, f"wrong customer: {order}")
+        check(order.get("item") == item.lower(), f"wrong item: {order}")
+        check(order.get("quantity") == 2, f"wrong quantity: {order}")
+        check(order.get("status") in {"PLACED", "IN_PROGRESS", "READY", "DELIVERED"},
+              f"invalid order status: {order}")
+    else:
+        line = {"item": item, "name": token, "price": 4.5 if route == "barista" else 3.25}
+        payload = {
+            "commandType": "PLACE_ORDER", "id": token, "orderSource": "COUNTER",
+            "baristaItems": [line] if route == "barista" else [],
+            "kitchenItems": [line] if route == "kitchen" else [],
+        }
+        if profile == "spring":
+            payload.update(location="ATLANTA", timestamp=datetime.now(timezone.utc).isoformat())
+            path = "/api/coffeeshop/order"
+        else:
+            payload.update(storeId="ATLANTA")
+            path = "/api/order"
+        status, body = request(base, path, payload)
+        check(status == 202, f"POST {path}: expected 202, got {status}: {body[:300]}")
+        result = parsed(body)
+        if profile == "spring":
+            check(result.get("order", {}).get("orderId") == token, f"wrong order: {result}")
+            tickets = result.get(route + "Tickets") or []
+            other = result.get(("kitchen" if route == "barista" else "barista") + "Tickets") or []
+            check(len(tickets) == 1 and len(other) == 0, f"wrong routing: {result}")
+            check(tickets[0].get("name") == token, f"wrong ticket: {result}")
+        else:
+            check(result.get("orderId") == token and result.get("status") == "IN_PROGRESS",
+                  f"wrong order: {result}")
+            check(result.get(route + "Items") == 1 and
+                  result.get(("kitchen" if route == "barista" else "barista") + "Items") == 0,
+                  f"wrong routing: {result}")
+    print(f"PASS {route} order")
+
+print("PASS Coffee Shop behavior")
+PY
