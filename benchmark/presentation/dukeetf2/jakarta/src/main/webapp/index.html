@@ -19,7 +19,8 @@
   <script type="text/javascript">
       var wsocket;
       function connect() {
-          wsocket = new WebSocket("ws://localhost:9080/dukeetf2-10-SNAPSHOT/dukeetf");
+          const scheme = location.protocol === "https:" ? "wss" : "ws";
+          wsocket = new WebSocket(`${scheme}://${location.host}/dukeetf2-10-SNAPSHOT/dukeetf`);
           wsocket.onmessage = onMessage;
       }
       function onMessage(evt) {

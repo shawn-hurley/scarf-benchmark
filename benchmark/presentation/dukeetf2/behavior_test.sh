@@ -26,7 +26,8 @@ while True:
             raise SystemExit(f'ETF page failed: {error}')
         time.sleep(2)
 assert ("Duke's WebSocket ETF" in html and 'id="price"' in html
-        and 'id="volume"' in html and 'new WebSocket' in html and path in html)
+        and 'id="volume"' in html and 'new WebSocket' in html
+        and 'location.host' in html and path in html)
 
 url = urlsplit(base)
 host = url.hostname
