@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export DAYTRADER_TARGET="${DAYTRADER_TARGET:-jakarta}"
 python3 - <<'DAYTRADER_BEHAVIOR'
 """Shared DayTrader stock quote behavior, embedded into each standalone test.sh."""
 import json
@@ -8,7 +9,7 @@ import os
 import sys
 import time
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 
 
@@ -17,6 +18,8 @@ def request(base, path, data=None):
     req = Request(base + path, data=body)
     try:
         with urlopen(req, timeout=180 if path.startswith('/config') else 10) as response:
+            if path != '/' and response.geturl() != base + path:
+                raise AssertionError(f'{path} redirected to {response.geturl()}')
             return response.status, response.read().decode('utf-8')
     except HTTPError as error:
         return error.code, error.read().decode('utf-8')
@@ -45,24 +48,32 @@ def validate(items, expected):
 
 
 def main():
-    candidates = [os.environ['BASE_URL'].rstrip('/')] if os.getenv('BASE_URL') else [
-        'http://localhost:8080', 'http://localhost:9080/daytrader'
-    ]
+    target = os.environ['DAYTRADER_TARGET']
+    if target not in ('jakarta', 'quarkus', 'spring'):
+        raise AssertionError(f'Unknown DayTrader target: {target}')
+    expected_path = '' if target == 'quarkus' else '/daytrader'
+    configured = os.environ.get('BASE_URL') or (
+        'http://localhost:8080' if target == 'quarkus' else 'http://localhost:9080'
+    )
+    parsed = urlsplit(configured)
+    if parsed.scheme not in ('http', 'https') or not parsed.netloc or parsed.query or parsed.fragment:
+        raise AssertionError(f'Invalid BASE_URL: {configured}')
+    if parsed.path.rstrip('/') not in ('', expected_path):
+        raise AssertionError(f'{target} requires context path {expected_path or "/"}, got {parsed.path}')
+    expected_base = parsed.scheme + '://' + parsed.netloc + expected_path
     base = None
     deadline = time.monotonic() + int(os.getenv('STARTUP_TIMEOUT', '180'))
     while time.monotonic() < deadline and base is None:
-        for candidate in candidates:
-            try:
-                status, _ = request(candidate, '/')
-                if status == 200:
-                    base = candidate
-                    break
-            except (OSError, URLError):
-                pass
+        try:
+            status, _ = request(expected_base, '/')
+            if status == 200:
+                base = expected_base
+        except (OSError, URLError):
+            pass
         if base is None:
             time.sleep(2)
     if base is None:
-        raise AssertionError(f'DayTrader did not start at {candidates}')
+        raise AssertionError(f'DayTrader did not start at {expected_base}')
     print(f'DayTrader at {base}', flush=True)
 
     try:
@@ -71,7 +82,7 @@ def main():
         initial = []
         print(f'Quote lookup before setup: {error}', flush=True)
     if not initial:
-        if base.endswith(':8080'):
+        if target == 'quarkus':
             raise AssertionError('Quarkus did not populate its database on startup')
         status, body = request(base, '/config?action=updateConfig&MaxUsers=2&MaxQuotes=3')
         if status != 200:
