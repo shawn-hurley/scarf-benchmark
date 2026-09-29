@@ -18,6 +18,7 @@ up: build
 
 down:
 	-$(DOCKER) rm -f $(CONTAINER_NAME) >/dev/null 2>&1
+	-@if test -f $(IMAGE_ID_FILE); then $(DOCKER) rmi "$$(cat $(IMAGE_ID_FILE))" >/dev/null 2>&1; fi
 	-rm -f $(IMAGE_ID_FILE)
 
 test: up
