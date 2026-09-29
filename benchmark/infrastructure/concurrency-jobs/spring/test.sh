@@ -3,7 +3,7 @@ set -euo pipefail
 case "${INFRA_TARGET:-jakarta}" in
   jakarta) origin="${BASE_URL:-http://localhost:9080}"; prefix=/jobs ;;
   quarkus) origin="${BASE_URL:-http://localhost:8080}"; prefix=/jobs ;;
-  spring) origin="${BASE_URL:-http://localhost:9080}"; prefix='' ;;
+  spring) origin="${BASE_URL:-http://localhost:9080}"; prefix=/jobs ;;
   *) echo 'Unknown INFRA_TARGET' >&2; exit 2 ;;
 esac
 api="${origin}${prefix}/webapi/JobService"
