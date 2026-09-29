@@ -21,7 +21,7 @@ def require(ok, message):
 def open_exact(page, link):
     response = page.goto(link, wait_until="domcontentloaded", timeout=15000)
     require(response is not None and response.status == 200, f"Expected 200 at exact path {link}; got {response.status if response else None}")
-    require(page.url.startswith(base + "/"), f"Unexpected path {page.url}")
+    require(page.url == link, f"Expected exact final URL {link}, got {page.url}")
 
 def field(page, name):
     return page.locator(f'input[id="{name}"], input[id$=":{name}"]').first
