@@ -49,7 +49,7 @@ public class MailerManagedBean implements Serializable {
      * @return the value of status
      */
     public String getStatus() {
-        if (mailStatus.isDone()) {
+        if (mailStatus != null && mailStatus.isDone()) {
             try {
                 this.setStatus(mailStatus.get());
             } catch (ExecutionException | CancellationException |

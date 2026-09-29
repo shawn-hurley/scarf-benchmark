@@ -18,8 +18,12 @@
                 xmlns:h="jakarta.faces.html">
     
     <ui:define name="content">
-        <h:outputText id="messageStatus"
-                      value="#{mailerManagedBean.status}" />
+        <h:outputText value="Status: " />
+        <h:outputText id="messageStatus" value="#{mailerManagedBean.status}" />
+        <h:form>
+            <h:commandButton value="Refresh" action="response?faces-redirect=true" />
+        </h:form>
+        <h:link outcome="index" value="Back" />
     </ui:define>
 
 </ui:composition>

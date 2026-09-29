@@ -16,6 +16,7 @@ up: build
 
 down:
 	-$(DOCKER) rm -f $(CONTAINER_NAME) >/dev/null 2>&1
+	-@[ ! -s $(IMAGE_ID_FILE) ] || $(DOCKER) image rm -f $$(cat $(IMAGE_ID_FILE)) >/dev/null 2>&1
 	-rm -f $(IMAGE_ID_FILE)
 
 test: up
