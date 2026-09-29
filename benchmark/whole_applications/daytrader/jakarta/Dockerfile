@@ -1,5 +1,6 @@
 FROM maven:3.9.12-ibm-semeru-21-noble
 
+
 USER root
 # install uv
 RUN apt-get update && apt-get install -y --no-install-recommends curl python3-venv python3-full     && curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -15,6 +16,9 @@ RUN uv venv /opt/venv     && uv pip install --python /opt/venv/bin/python playwr
 
 ENV PATH="/opt/venv/bin:$PATH"
 RUN playwright install --with-deps chromium
+
+# OpenJ9 shared-class AOT caching crashes on the arm64 validation VM.
+ENV JAVA_TOOL_OPTIONS="-Xshareclasses:none"
 
 # Set working directory
 WORKDIR /app
