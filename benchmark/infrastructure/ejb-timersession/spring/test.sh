@@ -3,7 +3,7 @@ set -euo pipefail
 case "${INFRA_TARGET:-jakarta}" in
   jakarta) url="${BASE_URL:-http://localhost:9080}/timersession/timer-client.xhtml" ;;
   quarkus) url="${BASE_URL:-http://localhost:9080}/timersession/timer-client.xhtml" ;;
-  spring) url="${BASE_URL:-http://localhost:9080}/" ;;
+  spring) url="${BASE_URL:-http://localhost:9080}/timersession/" ;;
   *) echo 'Unknown INFRA_TARGET' >&2; exit 2 ;;
 esac
 export TEST_URL="$url"
