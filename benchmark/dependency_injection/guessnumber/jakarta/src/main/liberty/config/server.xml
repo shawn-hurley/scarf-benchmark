@@ -10,6 +10,6 @@
 
     <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="9080" httpsPort="9443"/>
 
-    <application location="guessnumber-cdi.war" type="war"/>
+    <application location="guessnumber.war" type="war"/>
 
 </server>

@@ -5,10 +5,10 @@
   <modelVersion>4.0.0</modelVersion>
   
   <groupId>jakarta.examples.tutorial.cdi</groupId>
-  <artifactId>guessnumber-cdi</artifactId>
+  <artifactId>guessnumber</artifactId>
   <version>10-SNAPSHOT</version>
   <packaging>war</packaging>
-  <name>guessnumber-cdi</name>
+  <name>guessnumber</name>
   <description>Jakarta EE CDI Guessnumber-cdi Example</description>
 
   <properties>
@@ -32,7 +32,7 @@
   </dependencies>
 
   <build>
-    <finalName>guessnumber-cdi</finalName>
+    <finalName>guessnumber</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
