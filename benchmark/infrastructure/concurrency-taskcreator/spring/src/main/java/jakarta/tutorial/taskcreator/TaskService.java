@@ -58,6 +58,20 @@ public class TaskService {
         }
     }
 
+    @GetMapping(produces = MediaType.TEXT_PLAIN_VALUE)
+    public String taskLog() {
+        return infoField;
+    }
+
+    @PostMapping(path = "/submit", consumes = MediaType.TEXT_PLAIN_VALUE)
+    public void submitImmediate(@RequestBody String name) {
+        if (name.isBlank()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Task name is required");
+        }
+        submitTask(newTask(name, "IMMEDIATE"), "IMMEDIATE");
+    }
+
     @PostMapping(consumes = {MediaType.TEXT_HTML_VALUE, MediaType.TEXT_PLAIN_VALUE})
     public void addToInfoField(@RequestBody String msg) {
         infoField = msg + "\n" + infoField;

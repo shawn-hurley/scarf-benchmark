@@ -14,6 +14,9 @@ public class TaskCreatorBean implements Serializable {
     @Inject
     TaskService taskService;
 
+    @Inject
+    TaskRestPoster restPoster;
+
     private String taskMessages = "";
     private String taskType = "IMMEDIATE";
     private String taskName = "";
@@ -57,7 +60,7 @@ public class TaskCreatorBean implements Serializable {
 
     public void submitTask() {
         if (!taskService.getPeriodicTasks().contains(taskName)) {
-            Task task = new Task(taskName, taskType);
+            Task task = new Task(taskName, taskType, restPoster);
             taskService.submitTask(task, taskType);
             taskType = "IMMEDIATE";
             taskName = "";

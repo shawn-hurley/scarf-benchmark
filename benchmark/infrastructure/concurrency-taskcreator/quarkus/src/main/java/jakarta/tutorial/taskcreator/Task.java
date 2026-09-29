@@ -1,7 +1,6 @@
 package jakarta.tutorial.taskcreator;
 
 import jakarta.enterprise.context.Dependent;
-import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
 import java.text.DateFormat;
@@ -14,24 +13,23 @@ import java.util.Calendar;
 @Dependent
 public class Task implements Runnable {
     private static final Logger log = Logger.getLogger(Task.class);
-    private static final String WS_URL = "http://localhost:8080/taskinfo";
 
     private final String name;
     private final String type;
     private final DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
     private int counter = 1;
 
-    @Inject
-    TaskRestPoster restPoster;
+    private TaskRestPoster restPoster;
 
     public Task() {
         this.name = "unknown";
         this.type = "IMMEDIATE";
     }
 
-    public Task(String name, String type) {
+    public Task(String name, String type, TaskRestPoster restPoster) {
         this.name = name;
         this.type = type;
+        this.restPoster = restPoster;
     }
 
     @Override

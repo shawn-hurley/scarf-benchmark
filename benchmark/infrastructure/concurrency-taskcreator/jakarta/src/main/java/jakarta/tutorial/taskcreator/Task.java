@@ -26,11 +26,11 @@ public class Task implements Runnable {
 
     private static final Logger log = Logger.getLogger("Task");
     /*
-     * Updated: context root is now '/' (ROOT.war deployment). Allow override via
+     * Use the deployed /taskcreator context root. Allow override via
      * TASKCREATOR_BASE_URL env.
      */
     private static final String WS_URL_BASE = System.getenv().getOrDefault("TASKCREATOR_BASE_URL",
-            "http://localhost:9080");
+            "http://localhost:9080/taskcreator");
     private static final String WS_URL = WS_URL_BASE + "/taskinfo";
 
     private final String name;

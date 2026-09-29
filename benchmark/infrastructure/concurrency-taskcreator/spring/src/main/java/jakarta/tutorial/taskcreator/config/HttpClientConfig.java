@@ -9,7 +9,7 @@ public class HttpClientConfig {
     @Bean
     RestClient restClient() {
         return RestClient.builder()
-                .baseUrl("http://localhost:9080") // matching my other jakarta and quarkus apps for thios benchmark
+                .baseUrl("http://localhost:9080/taskcreator")
                 .build();
     }
 }

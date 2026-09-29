@@ -15,7 +15,7 @@ public class TaskRestPoster {
     private static final Logger log = Logger.getLogger(TaskRestPoster.class);
 
     public void post(String msg) throws IOException {
-        URL url = new URL("http://localhost:8080/taskinfo");
+        URL url = new URL("http://localhost:9080/taskcreator/taskinfo");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
         conn.setDoOutput(true);
