@@ -44,7 +44,7 @@ with sync_playwright() as p:
         if time.monotonic() >= deadline:
             raise AssertionError(f"Expected app at exact path {url}")
         time.sleep(2)
-    check(page.url.startswith(base + "/"), f"Unexpected path {page.url}")
+    check(page.url == url, f"Expected exact final URL {url}, got {page.url}")
     if profile != "spring":
         check(page.locator('input[name="jakarta.faces.ViewState"]').count() > 0,
               "Expected JSF form at exact index.xhtml path")
