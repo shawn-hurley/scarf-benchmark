@@ -34,6 +34,7 @@ up: build
 down:
 	-$(DOCKER) rm -f $(CONTAINER_NAME) $(DB_NAME) $(KAFKA_NAME) >/dev/null 2>&1
 	-$(DOCKER) network rm $(NETWORK_NAME) >/dev/null 2>&1
+	-@if test -s $(IMAGE_ID_FILE); then $(DOCKER) image rm "$$(cat $(IMAGE_ID_FILE))" >/dev/null 2>&1; fi
 	-rm -f $(IMAGE_ID_FILE)
 
 test: up
