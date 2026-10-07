@@ -1,22 +1,9 @@
 FROM maven:3.9.12-ibm-semeru-21-noble
 
 USER root
-# install uv and PostgreSQL
-RUN apt-get update && apt-get install -y --no-install-recommends curl python3-venv python3-full postgresql postgresql-client \
-    && curl -LsSf https://astral.sh/uv/install.sh | sh
-
-ENV PATH="/root/.local/bin:$PATH"
-
-# Shared browsers path so Chromium is cached once
-ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-RUN mkdir -p /ms-playwright && chmod 755 /ms-playwright
-
-# create venv and install
-RUN uv venv /opt/venv \
-    && uv pip install --python /opt/venv/bin/python playwright==1.47.0 pytest
-
-ENV PATH="/opt/venv/bin:$PATH"
-RUN playwright install --with-deps chromium
+# Runtime tools for the database and shared behavior test.
+RUN apt-get update && apt-get install -y --no-install-recommends python3 postgresql postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
 # Initialize PostgreSQL database at build time
 RUN pg_lsclusters | tail -1 | awk '{print $1, $2}' > /tmp/pgver.txt \
@@ -36,20 +23,10 @@ COPY . .
 
 RUN if [ -f mvnw ]; then chmod +x mvnw; fi && if [ -f smoke.py ]; then chmod +x smoke.py; fi && if [ -f test.sh ]; then chmod +x test.sh; fi
 
-# Contents of run.sh
-RUN MY_MVN=$([ -f ./mvnw ] && echo "./mvnw" || echo "mvn") \
-    && DEPS="dependency:purge-local-repository clean dependency:resolve dependency:resolve-plugins dependency:tree dependency:sources dependency:analyze-dep-mgt dependency:analyze-report install" \
-    && SITE="site:site site:jar" \
-    && $MY_MVN $DEPS $SITE \
-    && $MY_MVN -Pliberty $DEPS $SITE liberty:package \
-    && $MY_MVN -Pwildfly $DEPS $SITE cargo:uberwar \
-    && $MY_MVN -glassfish $DEPS $SITE cargo:uberwar \
-    && $MY_MVN -Ppayara $DEPS $SITE cargo:uberwar \
-    && $MY_MVN -Ptomee $DEPS $SITE cargo:uberwar \
-    && $MY_MVN -Parc-wildfly-managed $DEPS $SITE
+RUN mvn -Pliberty -DskipTests package
 
 CMD pg_lsclusters | tail -1 | awk '{print $1, $2}' > /tmp/pgver.txt \
     && PG_VERSION=$(cut -d' ' -f1 /tmp/pgver.txt) \
     && PG_CLUSTER=$(cut -d' ' -f2 /tmp/pgver.txt) \
     && pg_ctlcluster ${PG_VERSION} ${PG_CLUSTER} start \
-    && mvn clean liberty:run
+    && exec mvn -Pliberty -DskipTests liberty:run

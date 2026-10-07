@@ -3,6 +3,8 @@ package io.quarkuscoffeeshop.coffeeshop.web;
 
 import io.quarkuscoffeeshop.coffeeshop.counter.api.OrderService;
 import io.quarkuscoffeeshop.coffeeshop.domain.commands.PlaceOrderCommand;
+import io.quarkuscoffeeshop.coffeeshop.domain.Order;
+import io.quarkuscoffeeshop.coffeeshop.infrastructure.OrderRepository;
 import io.vertx.mutiny.core.eventbus.EventBus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.Map;
 
 @Path("/api")
 @Produces(MediaType.APPLICATION_JSON)
@@ -27,6 +30,9 @@ public class CoffeeshopApiResource {
     OrderService orderService;
 
     @Inject
+    OrderRepository orderRepository;
+
+    @Inject
     EventBus eventBus;
 
     @POST
@@ -36,7 +42,13 @@ public class CoffeeshopApiResource {
 
         LOGGER.info("PlaceOrderCommand received: {}", placeOrderCommand);
         orderService.onOrderIn(placeOrderCommand);
-        return Response.accepted().build();
+        Order order = orderRepository.findById(placeOrderCommand.getId());
+        return Response.accepted(Map.of(
+                "orderId", order.getOrderId(),
+                "status", order.getOrderStatus().name(),
+                "baristaItems", order.getBaristaLineItems().map(java.util.List::size).orElse(0),
+                "kitchenItems", order.getKitchenLineItems().map(java.util.List::size).orElse(0)
+        )).build();
     }
 
     @POST

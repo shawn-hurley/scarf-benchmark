@@ -11,7 +11,7 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN mkdir -p /ms-playwright && chmod 755 /ms-playwright
 
 # create venv and install
-RUN uv venv /opt/venv     && uv pip install --python /opt/venv/bin/python playwright==1.47.0 pytest aiohttp
+RUN uv venv /opt/venv     && uv pip install --python /opt/venv/bin/python playwright==1.47.0 pytest
 
 ENV PATH="/opt/venv/bin:$PATH"
 RUN playwright install --with-deps chromium
@@ -30,4 +30,4 @@ RUN chmod +x test.sh
 
 RUN mvn clean install -DskipTests
 
-CMD ["mvn", "quarkus:run"]
+CMD ["java", "-jar", "target/quarkus-app/quarkus-run.jar"]

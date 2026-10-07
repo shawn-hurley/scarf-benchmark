@@ -1,15 +1,31 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-BASE_URL="${BASE_URL:-http://localhost:8080}"
-
-echo "Health check: ${BASE_URL}/"
-HTTP_STATUS=$(curl -sL -o /dev/null -w "%{http_code}" "${BASE_URL}/")
-
-if [ "$HTTP_STATUS" -eq 200 ]; then
-  echo "PASS - got HTTP ${HTTP_STATUS}"
-  exit 0
-else
-  echo "FAIL - got HTTP ${HTTP_STATUS}"
-  exit 1
-fi
+case "${INFRA_TARGET:-jakarta}" in
+  spring) base="${BASE_URL:-http://localhost:8080}"; path=/; result=/response ;;
+  jakarta|quarkus) base="${BASE_URL:-http://localhost:9080}"; path=/index.xhtml; result=/response.xhtml ;;
+  *) echo 'Unknown INFRA_TARGET' >&2; exit 2 ;;
+esac
+export TEST_URL="${base}${path}" TEST_RESULT_URL="${base}${result}"
+for attempt in {1..60}; do
+  if curl -fsS -o /dev/null "${base}${path}"; then break; fi
+  if (( attempt == 60 )); then echo "Service unavailable: ${base}${path}" >&2; exit 1; fi
+  sleep 2
+done
+python - <<'PY'
+import os
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)
+    page = browser.new_page()
+    response = page.goto(os.environ['TEST_URL'])
+    assert response and response.status == 200, 'form URL missing'
+    assert page.title() == 'Interceptor Example', 'wrong form page'
+    page.get_by_label('Enter your name:').fill('MiXeD NaMe')
+    page.get_by_role('button', name='Submit').click()
+    page.get_by_text('Hello, mixed name.').wait_for(timeout=10000)
+    result = page.request.get(os.environ['TEST_RESULT_URL'])
+    assert result.status == 200, 'response path missing'
+    assert 'Hello, mixed name.' in page.locator('body').inner_text(), 'interceptor did not lowercase name'
+    browser.close()
+print('PASS: name is lowercased by interceptor')
+PY

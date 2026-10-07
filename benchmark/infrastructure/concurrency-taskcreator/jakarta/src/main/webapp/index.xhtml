@@ -25,7 +25,7 @@
         var wsocket;
         function connect() {
             var base = (location.origin.replace(/^http/, 'ws'));
-            wsocket = new WebSocket(base + "/wsinfo");
+            wsocket = new WebSocket(base + "/taskcreator/wsinfo");
             wsocket.onmessage = onMessage;
         }
         function onMessage(evt) {
